@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models import User
-from app.schemas import CreateWalletRequest
+from app.schemas import CreateWalletRequest, WalletResponse
 from app.repository import wallets as wallets_repository
 
 
@@ -15,7 +15,7 @@ def get_wallet(db: Session, current_user: User, wallet_name: str | None = None):
             db,
             current_user.id,
         )
-        return {"totla_balance": sum([w.amount for w in wallets])}
+        return {"totla_balance": sum([w.balance for w in wallets])}
 
     # Проверяем существует ли запрашиваем кошелек
     if not wallets_repository.is_wallet_exist(db, current_user.id, wallet_name):
@@ -25,7 +25,7 @@ def get_wallet(db: Session, current_user: User, wallet_name: str | None = None):
     return {"wallet": wallet.name, "balance": wallet.balance}
 
 
-def create_wallet(db: Session, current_user: User, wallet: CreateWalletRequest):
+def create_wallet(db: Session, current_user: User, wallet: CreateWalletRequest) -> WalletResponse:
     # Проверяем не существует ли уже такой кошелек
     if wallets_repository.is_wallet_exist(db, current_user.id, wallet.wallet_name):
         raise HTTPException(
@@ -33,15 +33,12 @@ def create_wallet(db: Session, current_user: User, wallet: CreateWalletRequest):
         )
     # Создать новый кошелек с начальным балансом
     wallet = wallets_repository.create_wallet(
-        db, current_user.id, wallet.wallet_name, wallet.initial_balance
+        db, current_user.id, wallet.wallet_name, wallet.initial_balance, wallet.currency
     )
     db.commit()
     # Возвращать информацию о созданном кошельке
-    return {
-        "message": f"Wallet '{wallet.name}' created",
-        "wallet": wallet.name,
-        "balance": wallet.balance,
-    }
+    return WalletResponse.model_validate(wallet)
+
 
 
 def delete_wallet(db: Session, current_user: User, wallet_name: str) -> None:
