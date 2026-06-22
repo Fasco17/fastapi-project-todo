@@ -1,104 +1,177 @@
+
+
+
 from decimal import Decimal
 
-from app.repository import users as users_repository, wallets as wallets_repository
+from app.models import User, Wallet
 
 
-def auth_headers(login: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {login}"}
+def test_add_expense_success(db_session, client):
+    # Arrange
+    user = User(login="test")
+    db_session.add(user)
+    db_session.flush()
+    wallet = Wallet(name="card", balance=200, user_id=user.id)
+    db_session.add(wallet)
+    db_session.commit()
+    db_session.refresh(wallet)
 
-
-def create_test_user(db, login: str = "alice"):
-    user = users_repository.create_user(db, login=login)
-    db.commit()
-    return user
-
-
-def create_test_wallet(db, user_id: int, wallet_name: str = "cash", balance: Decimal = Decimal("100.00")):
-    wallet = wallets_repository.create_wallet(db, user_id, wallet_name, balance)
-    db.commit()
-    return wallet
-
-
-def test_add_income_updates_wallet_balance(client, db_session):
-    user = create_test_user(db_session, login="alice")
-    create_test_wallet(db_session, user.id, wallet_name="cash", balance=Decimal("100.00"))
-
-    response = client.post(
-        "/api/v1/operations/income",
-        json={
-            "wallet_name": "cash",
-            "amount": "25.50",
-            "description": "Salary deposit",
-        },
-        headers=auth_headers(user.login),
-    )
-
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["message"] == "Income added"
-    assert payload["wallet"] == "cash"
-    assert payload["amount"] == "25.50"
-    assert payload["new_balance"] == "125.50"
-
-    wallet = wallets_repository.get_balance_by_name(db_session, user.id, "cash")
-    assert wallet.balance == Decimal("125.50")
-
-
-def test_add_expense_decreases_wallet_balance(client, db_session):
-    user = create_test_user(db_session, login="bob")
-    create_test_wallet(db_session, user.id, wallet_name="travel", balance=Decimal("200.00"))
-
+    # Act
     response = client.post(
         "/api/v1/operations/expense",
         json={
-            "wallet_name": "travel",
-            "amount": "80.00",
-            "description": "Taxi fare",
-        },
-        headers=auth_headers(user.login),
-    )
+            "wallet_name": "card",
+            "amount": 50.0,
+            "description": "food"
 
-    assert response.status_code == 200
+        },
+
+        headers={"Authorization": f"Bearer {user.login}"},
+    )
+    # Assert
+    assert response.status_code==200
     payload = response.json()
     assert payload["message"] == "Expense added"
-    assert payload["wallet"] == "travel"
-    assert payload["amount"] == "80.00"
-    assert payload["new_balance"] == "120.00"
-
-    wallet = wallets_repository.get_balance_by_name(db_session, user.id, "travel")
-    assert wallet.balance == Decimal("120.00")
+    assert payload["wallet"] == wallet.name
+    assert payload["amount"] == Decimal(50)
+    assert payload["new_balance"] == Decimal(150)
+    assert response.json()["description"] == "food"
 
 
-def test_add_income_returns_404_when_wallet_missing(client, db_session):
-    user = create_test_user(db_session, login="charlie")
 
-    response = client.post(
-        "/api/v1/operations/income",
-        json={
-            "wallet_name": "missing-wallet",
-            "amount": "10.00",
-            "description": "Test income",
-        },
-        headers=auth_headers(user.login),
-    )
+def test_add_expense_negative_amount(db_session, client):
+    user = User(login = "test2")
+    db_session.add(user)
+    db_session.flush()
+    wallet = Wallet(name="cash", balance=500, user_id = user.id)
 
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Wallet 'missing-wallet' not found"
+    db_session.add(wallet)
+    db_session.commit()
+    db_session.refresh(wallet)
 
-
-def test_add_expense_returns_400_when_insufficient_funds(client, db_session):
-    user = create_test_user(db_session, login="dana")
-    create_test_wallet(db_session, user.id, wallet_name="shopping", balance=Decimal("30.00"))
-
+    # Act
     response = client.post(
         "/api/v1/operations/expense",
         json={
-            "wallet_name": "shopping",
-            "amount": "50.00",
-            "description": "Big purchase",
-        },
-        headers=auth_headers(user.login),
-    )
+            "wallet_name": "cash",
+            "amount": -50.0,
+            "description": "food"
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Insufficient funds. Available: 30.00"
+        },
+
+        headers={"Authorization": f"Bearer {user.login}"},
+    )
+    # Assert
+    assert response.status_code== 422
+
+    payload = response.json()
+    assert "detail" in payload
+
+    db_session.refresh(wallet)
+    assert wallet.balance == Decimal(500)
+
+
+def test_add_expense_empty_name(db_session, client):
+    user = User(login = "test3")
+    db_session.add(user)
+    db_session.flush()
+    wallet = Wallet(name="cash", balance=500, user_id = user.id)
+
+    db_session.add(wallet)
+    db_session.commit()
+    db_session.refresh(wallet)
+
+    # Act
+    response = client.post(
+        "/api/v1/operations/expense",
+        json={
+            "wallet_name": "    ",
+            "amount": 50.0,
+            "description": "food"
+
+        },
+
+        headers={"Authorization": f"Bearer {user.login}"},
+    )
+    # Assert
+    assert response.status_code== 422
+
+    payload = response.json()
+    assert "detail" in payload
+
+    db_session.refresh(wallet)
+    assert wallet.balance == Decimal(500)
+
+
+
+def test_add_expense_wallet_not_exists(db_session, client):
+    user = User(login = "test3")
+    db_session.add(user)
+    db_session.commit()
+
+    # Act
+    response = client.post(
+        "/api/v1/operations/expense",
+        json={
+            "wallet_name": "cash",
+            "amount": 50.0,
+            "description": "food"
+
+        },
+
+        headers={"Authorization": f"Bearer {user.login}"},
+    )
+    # Assert
+    assert response.status_code== 404
+
+def test_add_expense_unathorized(client):
+    
+    #Arrange
+
+    # Act
+    response = client.post(
+        "/api/v1/operations/expense",
+        json={
+            "wallet_name": "cash",
+            "amount": 50.0,
+            "description": "food"
+
+        },
+
+        headers={"Authorization": "Bearer not exist"},
+    )
+    # Assert
+    assert response.status_code== 401
+
+
+
+def test_add_expense_not_unough_money(db_session, client):
+    # Arrange
+    user = User(login="test")
+    db_session.add(user)
+    db_session.flush()
+    wallet = Wallet(name="card", balance=200, user_id=user.id)
+    db_session.add(wallet)
+    db_session.commit()
+    db_session.refresh(wallet)
+
+    # Act
+    response = client.post(
+        "/api/v1/operations/expense",
+        json={
+            "wallet_name": "card",
+            "amount": 500.0,
+            "description": "food"
+
+        },
+
+        headers={"Authorization": f"Bearer {user.login}"},
+    )
+    # Assert
+    assert response.status_code==400
+
+    payload = response.json()
+    assert "detail" in payload
+
+    db_session.refresh(wallet)
+    assert wallet.balance == Decimal(200)
