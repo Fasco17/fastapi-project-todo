@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+
 from app.enum import CurrencyEnum
 from app.models import User, Wallet
 
