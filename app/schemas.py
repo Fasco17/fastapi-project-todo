@@ -32,7 +32,7 @@ class OperationRequest(BaseModel):
 
 
 class CreateWalletRequest(BaseModel):
-    wallet_name: str = Field(..., max_length=127)
+    wallet_name: str = Field(..., max_length=127, validation_alias="name")
     initial_balance: Decimal = 0
     currency: CurrencyEnum = CurrencyEnum.RUB
 
@@ -107,3 +107,6 @@ class TransferCreateSchema(BaseModel):
             raise ValueError("Amount cannto be negative")
         return v
         
+
+class TotalBalance(BaseModel):
+    total_balance: Decimal

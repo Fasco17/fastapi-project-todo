@@ -113,7 +113,7 @@ def get_operations_list(
 
 
 
-def transfer_between_wallets(
+async def transfer_between_wallets(
         db: Session, user_id: int, from_wallet_id: int, to_wallet_id: int, amount: Decimal
 ) -> OperationResponse:
     from_wallet = wallets_repository.get_wallet_by_id(db=db, user_id=user_id, wallet_id=from_wallet_id)
@@ -131,7 +131,7 @@ def transfer_between_wallets(
     target_amount = amount  # Сколько придёт получателю
     exchange_rate = 1.0  # Курс по умолчанию (одинаковые валюты)
     if from_wallet.currency != to_wallet.currency:  # Разные валюты — нужна конв
-        exchange_rate = get_exchange_rate(
+        exchange_rate = await get_exchange_rate(
             from_wallet.currency, to_wallet.currency
         )  # Получаем курс асинхронно
         target_amount = round(amount * exchange_rate, 2)
@@ -143,7 +143,7 @@ def transfer_between_wallets(
         wallet_id=from_wallet.id,
         type=OperationType.TRANSFER,
         amount=target_amount,
-        currency=from_wallet.currency,
+        currency=to_wallet.currency,
         category="перевод",
     )
 
