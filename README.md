@@ -45,4 +45,5 @@ An asynchronous REST API built with FastAPI for managing personal user wallets, 
    ```
 
 5. **Open on your browser:**
-    localhost:8000/static/index.html
+
+localhost:8000/static/index.html
