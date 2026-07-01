@@ -44,6 +44,5 @@ An asynchronous REST API built with FastAPI for managing personal user wallets, 
    uvicorn main:app --reload
    ```
 
-5. **Open on your browser:**
-
-localhost:8000/static/index.html
+5. **Open in your browser:**
+   [http://localhost:8000/static/index.html](http://localhost:8000/static/index.html)
