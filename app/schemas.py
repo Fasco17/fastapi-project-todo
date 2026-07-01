@@ -34,7 +34,7 @@ class OperationRequest(BaseModel):
 class CreateWalletRequest(BaseModel):
     wallet_name: str = Field(..., max_length=127, validation_alias="name")
     initial_balance: Decimal = 0
-    currency: CurrencyEnum = CurrencyEnum.RUB
+    currency: CurrencyEnum = CurrencyEnum.CZK
 
     @field_validator("wallet_name")
     def name_not_empty(cls, v: str) -> str:

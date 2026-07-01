@@ -2,7 +2,7 @@ from enum import StrEnum, auto
 
 
 class CurrencyEnum(StrEnum):
-    RUB = auto()
+    CZK = auto()
     USD = auto()
     EUR = auto()
 

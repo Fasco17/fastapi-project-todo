@@ -3,6 +3,7 @@ let currentUser = null;
 let wallets = [];
 let operations = [];
 
+
 function showToast(title, message, isError = false) {
     const toastEl = document.getElementById('toastNotification');
     const toastTitle = document.getElementById('toastTitle');
@@ -12,7 +13,6 @@ function showToast(title, message, isError = false) {
     toastTitle.textContent = title;
     toastBody.textContent = message;
     
-    // Цвета в зависимости от типа
     if (isError) {
         toastHeader.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
         toastHeader.style.color = 'white';
@@ -28,13 +28,16 @@ function showToast(title, message, isError = false) {
     toast.show();
 }
 
+
 function showError(message) {
-    showToast('❌ Ошибка', message, true);
+    showToast('❌ Error', message, true);
 }
 
+
 function showSuccess(message) {
-    showToast('✅ Успешно', message, false);
+    showToast('✅ Success', message, false);
 }
+
 
 function closeModal(modalId) {
     const modalEl = document.getElementById(modalId);
@@ -42,10 +45,11 @@ function closeModal(modalId) {
     if (modal) modal.hide();
 }
 
+
 async function register() {
     const username = document.getElementById('username').value.trim();
     if (!username) {
-        showError('Введите логин');
+        showError('Enter a username');
         return;
     }
 
@@ -57,40 +61,41 @@ async function register() {
         });
 
         if (response.ok) {
-            showSuccess('Регистрация успешна!');
+            showSuccess('Registration successful!');
             currentUser = username;
             showMainSection();
         } else {
             const error = await response.json();
-            showError(error.detail || 'Ошибка регистрации');
+            showError(error.detail || 'Registration error');
         }
     } catch (e) {
-        showError('Не удалось подключиться к серверу');
+        showError('Could not connect to the server');
     }
 }
+
 
 async function login() {
     const username = document.getElementById('username').value.trim();
     if (!username) {
-        showError('Введите логин');
+        showError('Enter a username');
         return;
     }
     currentUser = username;
-    // Проверяем наличие пользователя через /users/me
     try {
         const resp = await fetch(`${API_BASE}/users/me`, {
             headers: { 'Authorization': `Bearer ${encodeURIComponent(currentUser)}` }
         });
         if (!resp.ok) {
             const data = await resp.json().catch(() => ({}));
-            showError(data.detail || 'Пользователь не найден');
+            showError(data.detail || 'User not found');
             return;
         }
         showMainSection();
     } catch (e) {
-        showError('Не удалось подключиться к серверу');
+        showError('Could not connect to the server');
     }
 }
+
 
 function logout() {
     currentUser = null;
@@ -101,6 +106,7 @@ function logout() {
     document.getElementById('username').value = '';
 }
 
+
 function showMainSection() {
     document.getElementById('authSection').style.display = 'none';
     document.getElementById('mainSection').style.display = 'block';
@@ -108,12 +114,14 @@ function showMainSection() {
     loadAllData();
 }
 
+
 async function loadAllData() {
     await loadWallets();
     await loadOperations();
     await updateTotalBalance();
     updateWalletSelects();
 }
+
 
 async function loadWallets() {
     try {
@@ -123,9 +131,7 @@ async function loadWallets() {
 
         if (response.ok) {
             const rawWallets = await response.json();
-            // Нормализуем данные от бэкенда: приводим валюту к нижнему регистру, баланс к числу
             wallets = rawWallets.map(w => {
-                // Преобразуем баланс в число (обрабатываем строки, Decimal и другие типы)
                 let balance = 0;
                 if (typeof w.balance === 'number') {
                     balance = w.balance;
@@ -145,32 +151,33 @@ async function loadWallets() {
             updateWalletSelects();
             await updateTotalBalance();
         } else if (response.status === 401) {
-            console.log('Пользователь не авторизован, кошельков нет');
+            console.log('User is not authorized, no wallets');
             wallets = [];
             renderWalletsTable();
             updateWalletSelects();
             await updateTotalBalance();
         } else if (response.status === 404) {
-            console.log('Эндпоинт GET /wallets не найден, используем пустой список');
+            console.log('GET /wallets endpoint not found, using empty list');
             wallets = [];
             renderWalletsTable();
             updateWalletSelects();
             await updateTotalBalance();
         } else {
-            console.error('Ошибка загрузки кошельков:', response.status);
+            console.error('Error loading wallets:', response.status);
             wallets = [];
             renderWalletsTable();
             updateWalletSelects();
             await updateTotalBalance();
         }
     } catch (e) {
-        console.error('Ошибка подключения:', e);
+        console.error('Connection error:', e);
         wallets = [];
         renderWalletsTable();
         updateWalletSelects();
         await updateTotalBalance();
     }
 }
+
 
 async function loadOperations() {
     try {
@@ -180,9 +187,7 @@ async function loadOperations() {
 
         if (response.ok) {
             const rawOperations = await response.json();
-            // Нормализуем данные от бэкенда: приводим валюту к нижнему регистру, сумму к числу
             operations = rawOperations.map(op => {
-                // Преобразуем сумму в число (обрабатываем строки, Decimal и другие типы)
                 let amount = 0;
                 if (typeof op.amount === 'number') {
                     amount = op.amount;
@@ -200,31 +205,31 @@ async function loadOperations() {
             });
             renderOperationsTable();
         } else if (response.status === 401) {
-            console.log('Пользователь не авторизован, операций нет');
+            console.log('User is not authorized, no operations');
             operations = [];
             renderOperationsTable();
         }
     } catch (e) {
-        console.error('Ошибка загрузки операций', e);
+        console.error('Error loading operations', e);
     }
 }
+
 
 function renderWalletsTable() {
     const tbody = document.getElementById('walletsTable');
     
     if (wallets.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">У вас пока нет кошельков</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">You have no wallets yet</td></tr>';
         return;
     }
 
     const currencySymbols = {
-        'rub': '₽',
+        'czk': 'Kč',
         'usd': '$',
         'eur': '€'
     };
 
     tbody.innerHTML = wallets.map(w => {
-        // Гарантируем что баланс - число
         const balance = typeof w.balance === 'number' ? w.balance : (parseFloat(w.balance) || 0);
         const currency = String(w.currency || '').toLowerCase();
         const symbol = currencySymbols[currency] || currency.toUpperCase();
@@ -238,11 +243,12 @@ function renderWalletsTable() {
     }).join('');
 }
 
+
 function renderOperationsTable() {
     const tbody = document.getElementById('transactionsTable');
     
     if (operations.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Нет транзакций</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No transactions</td></tr>';
         return;
     }
 
@@ -250,33 +256,32 @@ function renderOperationsTable() {
     
     tbody.innerHTML = last10.map(t => {
         const wallet = wallets.find(w => w.id === t.wallet_id);
-        const walletName = wallet ? wallet.name : 'Неизвестно';
+        const walletName = wallet ? wallet.name : 'Unknown';
         let typeClass, typeIcon, typeLabel;
         if (t.type === 'income') {
             typeClass = 'text-success';
             typeIcon = '➕';
-            typeLabel = 'Доход';
+            typeLabel = 'Income';
         } else if (t.type === 'expense') {
             typeClass = 'text-danger';
             typeIcon = '➖';
-            typeLabel = 'Расход';
+            typeLabel = 'Expense';
         } else if (t.type === 'transfer') {
             typeClass = 'text-info';
             typeIcon = '🔄';
-            typeLabel = 'Перевод';
+            typeLabel = 'Transfer';
         } else {
             typeClass = 'text-secondary';
             typeIcon = '❓';
-            typeLabel = 'Неизвестно';
+            typeLabel = 'Unknown';
         }
-        const date = new Date(t.created_at).toLocaleString('ru-RU', {
+        const date = new Date(t.created_at).toLocaleString('en-US', {
             day: '2-digit',
             month: '2-digit',
             hour: '2-digit',
             minute: '2-digit'
         });
         
-        // Гарантируем что сумма - число
         const amount = typeof t.amount === 'number' ? t.amount : (parseFloat(t.amount) || 0);
         const currency = String(t.currency || '').toLowerCase();
         
@@ -292,17 +297,17 @@ function renderOperationsTable() {
     }).join('');
 }
 
+
 async function updateTotalBalance() {
     if (wallets.length === 0) {
         document.getElementById('totalBalance').innerHTML = `
-            0.00 ₽
-            <div class="fs-6 text-muted mt-2">Создайте кошелек для начала</div>
+            0.00 Kč
+            <div class="fs-6 text-muted mt-2">Create a wallet to get started</div>
         `;
         return;
     }
 
     try {
-        // Получаем общий баланс в рублях с сервера (с конвертацией валют)
         const response = await fetch(`${API_BASE}/balance`, {
             headers: { 'Authorization': `Bearer ${encodeURIComponent(currentUser)}` }
         });
@@ -311,25 +316,24 @@ async function updateTotalBalance() {
             const data = await response.json();
             const total = typeof data.total_balance === 'number' ? data.total_balance : (parseFloat(data.total_balance) || 0);
             document.getElementById('totalBalance').innerHTML = `
-                ${total.toFixed(2)} ₽
-                <div class="fs-6 text-muted mt-2">Общий баланс по всем кошелькам</div>
+                ${total.toFixed(2)} Kč
+                <div class="fs-6 text-muted mt-2">Total balance across all wallets</div>
             `;
         } else {
-            // Если запрос не удался - показываем 0
             document.getElementById('totalBalance').innerHTML = `
-                0.00 ₽
-                <div class="fs-6 text-muted mt-2">Ошибка загрузки баланса</div>
+                0.00 Kč
+                <div class="fs-6 text-muted mt-2">Error loading balance</div>
             `;
         }
     } catch (e) {
-        console.error('Ошибка загрузки общего баланса:', e);
-        // При ошибке показываем 0
+        console.error('Error loading total balance:', e);
         document.getElementById('totalBalance').innerHTML = `
-            0.00 ₽
-            <div class="fs-6 text-muted mt-2">Ошибка подключения</div>
+            0.00 Kč
+            <div class="fs-6 text-muted mt-2">Connection error</div>
         `;
     }
 }
+
 
 function updateWalletSelects() {
     const selects = [
@@ -337,7 +341,7 @@ function updateWalletSelects() {
     ];
 
     const currencySymbols = {
-        'rub': '₽',
+        'czk': 'Kč',
         'usd': '$',
         'eur': '€'
     };
@@ -347,10 +351,9 @@ function updateWalletSelects() {
         if (!select) return;
         
         if (wallets.length === 0) {
-            select.innerHTML = '<option value="">Сначала создайте кошелек</option>';
+            select.innerHTML = '<option value="">Create a wallet first</option>';
         } else {
             select.innerHTML = wallets.map(w => {
-                // Гарантируем что баланс - число
                 const balance = typeof w.balance === 'number' ? w.balance : (parseFloat(w.balance) || 0);
                 const currency = String(w.currency || '').toLowerCase();
                 const symbol = currencySymbols[currency] || currency.toUpperCase();
@@ -360,13 +363,14 @@ function updateWalletSelects() {
     });
 }
 
+
 async function addWallet() {
     const name = document.getElementById('walletName').value.trim();
     const currency = document.getElementById('walletCurrency').value;
     const balance = parseFloat(document.getElementById('walletBalance').value);
 
     if (!name) {
-        showError('Введите название кошелька');
+        showError('Enter a wallet name');
         return;
     }
 
@@ -381,23 +385,24 @@ async function addWallet() {
         });
 
         if (response.ok) {
-            showSuccess('Кошелек создан!');
+            showSuccess('Wallet created!');
             closeModal('addWalletModal');
             document.getElementById('walletName').value = '';
             document.getElementById('walletBalance').value = '0';
             await loadAllData();
         } else {
             const error = await response.json();
-            showError(error.detail || 'Ошибка создания кошелька');
+            showError(error.detail || 'Error creating wallet');
         }
     } catch (e) {
-        showError('Ошибка подключения');
+        showError('Connection error');
     }
 }
 
+
 async function addIncome() {
     if (wallets.length === 0) {
-        showError('Сначала создайте кошелек');
+        showError('Create a wallet first');
         return;
     }
 
@@ -406,13 +411,13 @@ async function addIncome() {
     const description = document.getElementById('incomeDescription').value.trim();
 
     if (!amount || amount <= 0) {
-        showError('Введите корректную сумму');
+        showError('Enter a valid amount');
         return;
     }
 
     const wallet = wallets.find(w => w.id === wallet_id);
     if (!wallet) {
-        showError('Кошелек не найден');
+        showError('Wallet not found');
         return;
     }
 
@@ -427,28 +432,29 @@ async function addIncome() {
                 wallet_name: wallet.name, 
                 amount, 
                 description,
-                category: description || 'доход'
+                category: description || 'income'
             })
         });
 
         if (response.ok) {
-            showSuccess('Доход добавлен!');
+            showSuccess('Income added!');
             closeModal('addIncomeModal');
             document.getElementById('incomeAmount').value = '';
             document.getElementById('incomeDescription').value = '';
             await loadAllData();
         } else {
             const error = await response.json();
-            showError(error.detail || 'Ошибка добавления дохода');
+            showError(error.detail || 'Error adding income');
         }
     } catch (e) {
-        showError('Ошибка подключения');
+        showError('Connection error');
     }
 }
 
+
 async function addExpense() {
     if (wallets.length === 0) {
-        showError('Сначала создайте кошелек');
+        showError('Create a wallet first');
         return;
     }
 
@@ -458,18 +464,18 @@ async function addExpense() {
     const description = document.getElementById('expenseDescription').value.trim();
 
     if (!amount || amount <= 0) {
-        showError('Введите корректную сумму');
+        showError('Enter a valid amount');
         return;
     }
 
     if (!category) {
-        showError('Введите категорию');
+        showError('Enter a category');
         return;
     }
 
     const wallet = wallets.find(w => w.id === wallet_id);
     if (!wallet) {
-        showError('Кошелек не найден');
+        showError('Wallet not found');
         return;
     }
 
@@ -489,7 +495,7 @@ async function addExpense() {
         });
 
         if (response.ok) {
-            showSuccess('Расход добавлен!');
+            showSuccess('Expense added!');
             closeModal('addExpenseModal');
             document.getElementById('expenseAmount').value = '';
             document.getElementById('expenseCategory').value = '';
@@ -497,16 +503,17 @@ async function addExpense() {
             await loadAllData();
         } else {
             const error = await response.json();
-            showError(error.detail || 'Ошибка добавления расхода');
+            showError(error.detail || 'Error adding expense');
         }
     } catch (e) {
-        showError('Ошибка подключения');
+        showError('Connection error');
     }
 }
 
+
 async function transfer() {
     if (wallets.length < 2) {
-        showError('Для перевода нужно минимум 2 кошелька');
+        showError('At least 2 wallets are required for a transfer');
         return;
     }
 
@@ -515,12 +522,12 @@ async function transfer() {
     const amount = parseFloat(document.getElementById('transferAmount').value);
 
     if (from_wallet_id === to_wallet_id) {
-        showError('Нельзя перевести в тот же кошелек');
+        showError('Cannot transfer to the same wallet');
         return;
     }
 
     if (!amount || amount <= 0) {
-        showError('Введите корректную сумму');
+        showError('Enter a valid amount');
         return;
     }
 
@@ -535,18 +542,19 @@ async function transfer() {
         });
 
         if (response.ok) {
-            showSuccess('Перевод выполнен!');
+            showSuccess('Transfer completed!');
             closeModal('transferModal');
             document.getElementById('transferAmount').value = '';
             await loadAllData();
         } else {
             const error = await response.json();
-            showError(error.detail || 'Ошибка перевода');
+            showError(error.detail || 'Transfer error');
         }
     } catch (e) {
-        showError('Ошибка подключения');
+        showError('Connection error');
     }
 }
+
 
 function initReportDates() {
     const today = new Date();
@@ -558,17 +566,18 @@ function initReportDates() {
     document.getElementById('reportDateTo').valueAsDate = tomorrow;
 }
 
+
 async function loadReport() {
     const dateFrom = document.getElementById('reportDateFrom').value;
     const dateTo = document.getElementById('reportDateTo').value;
 
     if (!dateFrom || !dateTo) {
-        showError('Выберите период');
+        showError('Select a period');
         return;
     }
 
     if (dateFrom > dateTo) {
-        showError('Дата начала не может быть позже даты окончания');
+        showError('Start date cannot be later than end date');
         return;
     }
 
@@ -584,9 +593,7 @@ async function loadReport() {
 
         if (response.ok) {
             const rawReportOperations = await response.json();
-            // Нормализуем данные от бэкенда: приводим валюту к нижнему регистру, сумму к числу
             const reportOperations = rawReportOperations.map(op => {
-                // Преобразуем сумму в число (обрабатываем строки, Decimal и другие типы)
                 let amount = 0;
                 if (typeof op.amount === 'number') {
                     amount = op.amount;
@@ -605,30 +612,30 @@ async function loadReport() {
             const tbody = document.getElementById('reportTable');
             
             if (reportOperations.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Нет операций за выбранный период</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No operations for the selected period</td></tr>';
             } else {
                 tbody.innerHTML = reportOperations.reverse().map(t => {
                     const wallet = wallets.find(w => w.id === t.wallet_id);
-                    const walletName = wallet ? wallet.name : 'Неизвестно';
+                    const walletName = wallet ? wallet.name : 'Unknown';
                     let typeClass, typeIcon, typeLabel;
                     if (t.type === 'income') {
                         typeClass = 'text-success';
                         typeIcon = '➕';
-                        typeLabel = 'Доход';
+                        typeLabel = 'Income';
                     } else if (t.type === 'expense') {
                         typeClass = 'text-danger';
                         typeIcon = '➖';
-                        typeLabel = 'Расход';
+                        typeLabel = 'Expense';
                     } else if (t.type === 'transfer') {
                         typeClass = 'text-info';
                         typeIcon = '🔄';
-                        typeLabel = 'Перевод';
+                        typeLabel = 'Transfer';
                     } else {
                         typeClass = 'text-secondary';
                         typeIcon = '❓';
-                        typeLabel = 'Неизвестно';
+                        typeLabel = 'Unknown';
                     }
-                    const date = new Date(t.created_at).toLocaleString('ru-RU', {
+                    const date = new Date(t.created_at).toLocaleString('en-US', {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric',
@@ -637,11 +644,10 @@ async function loadReport() {
                     });
                     
                     const currencySymbols = {
-                        'rub': '₽',
+                        'czk': 'Kč',
                         'usd': '$',
                         'eur': '€'
                     };
-                    // Гарантируем что сумма - число
                     const amount = typeof t.amount === 'number' ? t.amount : (parseFloat(t.amount) || 0);
                     const currency = String(t.currency || '').toLowerCase();
                     const symbol = currencySymbols[currency] || currency.toUpperCase();
@@ -659,13 +665,13 @@ async function loadReport() {
             }
 
             document.getElementById('reportContent').style.display = 'block';
-            showSuccess('Отчет сформирован!');
+            showSuccess('Report generated!');
         } else {
             const error = await response.json();
-            showError(error.detail || 'Ошибка загрузки отчета');
+            showError(error.detail || 'Error loading report');
         }
     } catch (e) {
-        console.error('Ошибка загрузки отчета:', e);
-        showError('Ошибка подключения к серверу');
+        console.error('Error loading report:', e);
+        showError('Server connection error');
     }
 }

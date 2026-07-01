@@ -7,12 +7,12 @@ from app.enum import CurrencyEnum
 
 # курсы валют
 FALLBACK_RATES: Dict[Tuple[str, str], Decimal] = {
-    (CurrencyEnum.USD, CurrencyEnum.RUB): Decimal(str(95.0)),  # Примерный курс USD->RUB
+    (CurrencyEnum.USD, CurrencyEnum.CZK): Decimal(str(20.0)),  # Примерный курс USD->RUB
     (CurrencyEnum.USD, CurrencyEnum.EUR): Decimal(str(0.92)),  # Примерный курс USD->EUR
-    (CurrencyEnum.EUR, CurrencyEnum.RUB): Decimal(str(103.26)),  # Примерный курс EUR->RUB
-    (CurrencyEnum.RUB, CurrencyEnum.USD): Decimal(str(0.0105)),  # Примерный курс RUB->USD
+    (CurrencyEnum.EUR, CurrencyEnum.CZK): Decimal(str(24.26)),  # Примерный курс EUR->RUB
+    (CurrencyEnum.CZK, CurrencyEnum.USD): Decimal(str(0.047)),  # Примерный курс RUB->USD
     (CurrencyEnum.EUR, CurrencyEnum.USD): Decimal(str(1.087)),  # Примерный курс EUR->USD
-    (CurrencyEnum.RUB, CurrencyEnum.EUR): Decimal(str(0.0097)),  # Примерный курс RUB->EUR
+    (CurrencyEnum.CZK, CurrencyEnum.EUR): Decimal(str(0.041)),  # Примерный курс RUB->EUR
 }
 
 
