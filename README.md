@@ -26,3 +26,15 @@ An asynchronous REST API built with FastAPI for managing personal user wallets, 
    ```bash
    git clone https://github.com/Fasco17/fastapi-project-todo.git
    cd fast-api-todo-app
+2. **Create and activate a virtual environment:**
+    ```bash
+    python3 -m venv venv
+source venv/bin/activate
+3. **Install the dependencies:**
+    ```bash
+    pip install -r requirements.txt
+4. **Run the development server:**
+    ```bash
+    uvicorn main:app --reload
+5. **Open on your browser**
+    localhost:8000/static/index.html
