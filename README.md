@@ -15,7 +15,7 @@ An asynchronous REST API built with FastAPI for managing personal user wallets, 
 ## 💡 Key Features
 
 * **User Authentication:** Secure registration and login.
-* **Wallet Management:** Create and manage multiple wallets in different currencies (`USD`, `EUR`, `CZK`, `RUB`).
+* **Wallet Management:** Create and manage multiple wallets in different currencies (`USD`, `EUR`, `CZK`).
 * **Transactions & Transfers:** Perform internal transfers between wallets with automatic conversion based on exchange rates.
 * **Operation History:** Track and retrieve a complete list of all financial operations.
 * **Automated Testing:** Core logic covered with robust unit tests via `pytest`.
